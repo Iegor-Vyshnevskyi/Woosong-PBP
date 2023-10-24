@@ -1,0 +1,292 @@
+---
+title: "Lecture 6: Exploratory Data Analysis in Python"
+subtitle: "Practical Business Python"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+---
+
+# Introduction
+
+## Dataset
+
+The dataset we will be using is the [Cardataset](https://www.kaggle.com/datasets/CooperUnion/cardataset) from Kaggle. This is a very famous data set that has been used in machine learning literature many times.
+
+To offer a quick overview of the data set, it has more than 10,000 rows and more than ten columns that contain information on the car's attributes, like the fuel type of the engine, the engine's power, the kind of transmission, the vehicle's highway and city MPGs, and many more (e.g., MSRP, meaning Manufacturer's Suggested Retail Price). As a result, in this lesson, we will examine the data and prepare it for further use.
+
+
+```{python echo=FALSE}
+# install needed modules if you do not have them
+#pip install seaborn
+#pip install nbformat
+#pip install nbclient
+#pip install pandas
+#pip install numpy
+#pip install ipykernel
+
+```
+
+```{python}
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np # linear algebra
+import matplotlib.pyplot as plt # this is used for the plot the graph
+import seaborn as sns # used for plot interactive graph.
+
+sns.set(color_codes=True) # adds a nice background to the graphs
+
+# check the current working directory
+import os
+print(os.getcwd())
+# change the current working directory
+os.chdir("C:\\Users\\Iegor\\OneDrive - kdis.ac.kr\\Woosong_2022\\Work\\2023_fall\\Practical Business Python\\W6")
+
+print(os.getcwd())
+
+```
+
+
+```{python}
+# Load data using pandas
+cars = pd.read_csv('data.csv')
+
+# To display the top 5 rows 
+cars.head(5)  
+
+# To display the botton 5 rows
+cars.tail(5)                        
+
+```
+
+# Exploratory Data Analysis (EDA)
+
+## Checking the types of data
+Here, we verify the datatypes because the MSRP or the car's price may occasionally be saved as a string. If this is the case, we must convert the text to integer data before we can graph the data. There is no need to worry because the data in this instance is already in integer format.
+
+```{python}
+
+cars.dtypes # To check the data type
+
+```
+
+
+## Dropping irrelevant columns
+
+Every EDA must include this step since there are occasionally numerous columns we never utilize. In these situations, dropping is the only option. The columns for Engine Fuel Type, Market Category, Vehicle Style, Popularity, Number of Doors, and Vehicle Size in this case don't make sense to me, so I've just left them out of the example.
+
+```{python}
+
+cars = cars.drop(['Engine Fuel Type', 'Market Category', 'Vehicle Style', 'Popularity', 'Number of Doors', 'Vehicle Size'], axis=1)
+cars.head(5)
+
+```
+
+## Renaming the columns
+
+In this case, the majority of the column names are quite difficult to read, so I just changed them. This strategy enhances the data set's readability and is a good one.
+
+```{python}
+
+cars = cars.rename(columns={"Engine HP": "HP", "Engine Cylinders": "Cylinders", "Transmission Type": "Transmission", "Driven_Wheels": "Drive Mode","highway MPG": "MPG-H", "city mpg": "MPG-C", "MSRP": "Price" })
+cars.head(5)
+
+```
+
+## Dropping the duplicate rows
+
+This is frequently a useful thing to perform since a large data collection, as in this example, which has more than 10,000 rows, frequently contains some duplicate data that might be upsetting. In this case, I eliminate all of the duplicate values from the data-set. For instance, I had 11914 rows of data before the duplicates were removed, but I only had 10925 afterward, which means I had 989 duplicate rows.
+
+
+```{python}
+# check number of raws and columns
+cars.shape
+
+```
+
+```{python}
+duplicate_rows_cars = cars[cars.duplicated()]
+print("number of duplicate rows: ", duplicate_rows_cars.shape)
+
+```
+
+Let's now eliminate the duplicate data as doing so is acceptable.
+
+```{python}
+# Used to count the number of rows
+cars.count()      
+
+```
+
+Therefore, we are deleting 989 rows of duplicate data from the 11914 rows that can be seen above.
+
+```{python}
+cars = cars.drop_duplicates()
+cars.head(5)     
+
+```
+
+```{python}
+# Used to count the number of rows
+cars.count()      
+
+```
+
+## Dropping the missing or null values
+
+While basically identical to the previous stage, any missing values are now identified and will be deleted later in this step. However, this is not a smart method to employ because many people simply replace the missing values with the mean or average of that column. Or even model missing variables. 
+In this instance, however, I simply dropped the missing numbers. As a result, I just discarded those numbers because there are only about 100 missing values out of a total of 10,000, which is a very tiny quantity.
+
+```{python}
+
+print(cars.isnull().sum())   
+
+```
+This explains why the rows for calculating the number of cylinders and horsepower (HP) in the previous step were 10856 and 10895 respectively over 10925.
+
+```{python}
+# Dropping the missing values.
+cars = cars.dropna()    
+cars.count()
+
+```
+We have now eliminated all the rows for the cylinders and horsepower (HP) fields that had Null or N/A values.
+
+```{python}
+# one more check
+print(cars.isnull().sum())   # After dropping the values
+
+```
+
+## Detecting Outliers
+
+An outlier is a point or group of points that stand out from the rest. They can occasionally range from very high to very low. Finding and eliminating the outliers is frequently a wise decision. Because outliers are one of the main causes of a model's decreased accuracy. Therefore, it makes sense to get rid of them. 
+The outlier detection and removal procedure I'll use is known as the IQR score technique. Visualizations utilizing a box plot frequently allow the detection of outliers. The MSRP, Cylinders, Horsepower, and EngineSize box plot are displayed here. There are certain points in each of the plots that fall into the category of outliers. 
+Yet, in the real-life research you need to justify strongly why you drop outliers.
+
+```{python}
+
+sns.boxplot(x=cars['Price'])
+
+plt.show()
+
+```
+
+```{python}
+
+sns.boxplot(x=cars['HP'])
+
+plt.show()
+
+```
+
+```{python}
+
+sns.boxplot(x=cars['Cylinders'])
+
+plt.show()
+
+```
+
+The interquartile range method defines outliers as values larger than Q3 + 1.5 * IQR or the values smaller than Q1 – 1.5 * IQR
+
+```{python}
+
+print(cars.dtypes)
+
+# Filter only numerical columns
+numerical_columns = cars.select_dtypes(include=[np.number])
+
+# Calculate Q1 for each numerical column
+Q1 = numerical_columns.quantile(0.25)
+Q3 = numerical_columns.quantile(0.75)
+
+IQR = Q3 - Q1
+print(IQR)
+
+```
+
+
+No worries about the aforementioned values; all that matters is that you understand how to utilize this strategy to eliminate outliers, not that you know every single one of the values.
+
+```{python}
+
+# Define a boolean mask for outliers in numerical columns
+outliers_mask = (numerical_columns < (Q1 - 1.5 * IQR)) | (numerical_columns > (Q3 + 1.5 * IQR))
+
+# Remove rows with any outlier in numerical columns
+cars_no_outliers = cars[~outliers_mask.any(axis=1)]
+
+# Display the DataFrame after removing outliers
+print(cars_no_outliers)
+
+cars_no_outliers.shape
+
+```
+
+The 1600 or so rows in question are seen above. However, you cannot entirely eliminate the outliers since even after using the aforementioned approach, a single or two outliers may remain, but that is okay because there were more than 100 outliers. 
+
+## Plot different features against one another (scatter), against frequency (histogram)
+
+### Histogram
+
+A histogram is a representation of how frequently different variables occur across time. In this instance, there are primarily 10 various kinds of automobile manufacturing firms, however it is sometimes crucial to know which company produces the most cars. One of the simple methods for learning how many cars were produced by a distinct firm is to create a histogram.
+
+```{python}
+
+cars_no_outliers.Make.value_counts().nlargest(40).plot(kind='bar', figsize=(10,5))
+plt.title('Number of cars by make')  # Set the title using plt.title()
+plt.xlabel('Make')  # Set the x-axis label
+plt.ylabel('Count')  # Set the y-axis label
+plt.show()
+
+```
+
+### Heat Maps
+
+When determining the dependent variables, a certain sort of graphic called a heat map is required. Heat maps are one of the greatest tools for discovering the connections between the features. The heat map below shows that the engine size, horsepower, and number of cylinders have the greatest impact on pricing.
+
+```{python}
+
+numeric_columns_2 = cars_no_outliers.select_dtypes(include=['number'])
+
+plt.figure(figsize=(10,5))
+
+c= numeric_columns_2.corr()
+
+sns.heatmap(c,cmap="BrBG",annot=True)
+plt.show()
+c
+
+```
+
+### Scatterplot
+
+To determine the correlation between two variables, we often utilize scatter plots. We can see the scatter plot below, which shows the relationship between Horsepower and Price. The plot shown below makes it simple to create a trend line. These characteristics offer a good dispersion of points.
+
+```{python}
+
+fig, ax = plt.subplots(figsize=(10,6))
+ax.scatter(cars_no_outliers['HP'], cars_no_outliers['Price'])
+ax.set_xlabel('HP')
+ax.set_ylabel('Price')
+plt.show()
+
+```
+
+As a result, the actions listed above are some of the general ones you must do to undertake exploratory data analysis (EDA). Although there are still many more to come, this gives you a decent concept of how to do an effective EDA given any data sets.
+
+
+# Credits
+
+To prepere this materials I have used and modified the following sources:
+EISA. [Intro to Exploratory data analysis (EDA) in Python](https://www.kaggle.com/code/imoore/intro-to-exploratory-data-analysis-eda-in-python/notebook)
