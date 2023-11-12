@@ -1,0 +1,683 @@
+---
+title: "Lecture 7: Data Visualization with Python"
+subtitle: "Practical Business Python"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+---
+
+# Dataset intro
+
+The dataset we will be using is the [Tips](https://www.kaggle.com/code/sanjanabasu/tips-dataset/input) from Kaggle. The Tips database is a record of the tips provided by customers in a restaurant over the course of two and a half months in the early 1990s. It has six columns: total_bill, tip, sex, smoker, day, time, and size.
+
+The **Tips database** is a record of the tips provided by customers in a restaurant over the course of two and a half months in the early 1990s. It has seven columns: total_bill, tip, sex, smoker, day, time, and size.
+
+# Loading needed modules / libraries and data
+
+```{python echo=FALSE}
+# install needed modules if you do not have them
+#pip install numpy # linear algebra
+#pip install pandas # data processing, CSV file I/O (e.g. pd.read_csv)
+#pip install matplotlib # this is used for the plot the graph
+#pip install seaborn # used for plot both static and interactive graph.
+#pip install bokeh # used for interactive graph
+#pip install plotly # used for interactive graph
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+
+```
+
+# Loading data
+
+First, we check 'working folder' and set it if needed. Remember that for Google Colab you need to upload the data file first. 
+
+```{python}
+# check the current working directory
+import os
+print(os.getcwd())
+# change the current working directory
+os.chdir("C:\\Users\\Iegor\\OneDrive - kdis.ac.kr\\Woosong_2022\\Work\\2023_fall\\Practical Business Python\\W7")
+
+print(os.getcwd())
+
+```
+
+```{python}
+
+import pandas as pd
+
+# Load data using pandas
+data = pd.read_csv("tips.csv")
+
+# To display the top 10 rows 
+data.head(10)  
+
+# To display the botton 10 rows
+data.tail(10)                        
+
+```
+
+```{python}
+# To check the data type
+data.dtypes
+```
+
+```{python}
+# check number of raws and columns
+data.shape
+
+```
+
+
+# Visualizing data
+
+## Matplotlib
+Matplotlib is a low-level data visualization package based on NumPy arrays that is simple to use. It includes graphs such as scatter plots, line plots, histograms, and so forth. Matplotlib is quite versatile. 
+
+### Histogram
+
+**Histogram** is a type of bar plot that shows the frequency or number of values compared to a set of value ranges. It is similar to a bar chart, but a histogram groups numbers into ranges. The height of each bar shows how many fall into each range.
+
+```{python}
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the histogram of the total bill
+plt.hist(data['total_bill'], bins=10) # bins = number of bar in figure
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Frequency (number)') # to set the y-axis label
+plt.title('Histogram of Total Bill') # to set the title
+plt.show() # to show the figure
+
+# To plot the histogram of the tip
+plt.hist(data['tip'], bins=10) # bins = number of bar in figure
+plt.xlabel('Tip') # to set the x-axis label
+plt.ylabel('Frequency (number)') # to set the y-axis label
+plt.title('Histogram of Tip') # to set the title
+plt.show() # to show the figure
+
+# To plot the histogram of the total bill with percentage
+plt.hist(data['total_bill'], bins=10, density=True) # bins = number of bar in figure
+# density=True normalizes the histogram so that the area under the histogram equals 1, effectively turning the counts into probabilities or percentages. In other words, it transforms the histogram into a probability density function.
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Frequency (percentage)') # to set the y-axis label
+plt.title('Histogram of Total Bill') # to set the title
+plt.show() # to show the figure
+
+```
+
+
+### Bar plot
+
+**Bar plot** is a type of plot that visualizes categorical data with rectangular bars. Each bar represents a category, and the height of each bar represents a frequency value. Bar plots can be oriented horizontally or vertically. 
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the bar plot of the total bill
+plt.bar(data['total_bill'], data['tip']) # bins = number of bar in figure
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Bar plot of Total Bill') # to set the title
+plt.show() # to show the figure
+
+```
+
+### Scatter plot
+
+**Scatter plot** is a type of plot that shows the data as a collection of points. The position of a point depends on its two-dimensional value, where each value is a position on either the horizontal or vertical dimension. 
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the scatter plot of the total bill and tip
+plt.scatter(data['total_bill'], data['tip']) # bins = number of bar in figure
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Scatter plot of Total Bill and Tip') # to set the title
+plt.show() # to show the figure
+
+# To plot the scatter plot of day and tip
+plt.scatter(data['day'], data['tip']) # bins = number of bar in figure
+plt.xlabel('Day') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Scatter plot of Day and Tip') # to set the title
+plt.show() # to show the figure
+
+```
+
+We can make this graph more comprehensible by adding colors and changing the size of the points. We may accomplish this by modifying the scatter function's c and s parameters. The colorbar() function may also be used to display the color bar.
+
+```{python}
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# Scatter plot with day against tip
+plt.scatter(data['day'], data['tip'], c=data['size'], 
+			s=data['total_bill'])
+
+plt.xlabel('Day') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Scatter plot of Day and Tip modified') # to set the title
+plt.colorbar() # to show the color bar
+plt.show() # to show the figure
+
+
+```
+
+### Box plot
+
+**Box plot** is a type of plot that shows the distribution of numerical data and its quartiles. The box extends from the Q1 to Q3 quartile values of the data, with a line at the median (Q2). The whiskers extend from the edges of the box to the last data point that is within 1.5 times the interquartile range (IQR) of the edges of the box. The outliers are plotted as individual points.
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the box plot of the total bill
+plt.boxplot(data['total_bill']) # bins = number of bar in figure
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.title('Box plot of Total Bill') # to set the title
+plt.show() # to show the figure
+
+# To plot the box plot of the total bill and tip
+plt.boxplot([data['total_bill'], data['tip']]) # bins = number of bar in figure
+plt.xlabel('Total Bill and Tip') # to set the x-axis label
+plt.title('Box plot of Total Bill and Tip') # to set the title
+plt.show() # to show the figure
+
+```
+
+### Pie chart
+
+**Pie chart** is a type of plot that shows the proportion of each value to the whole. The whole is represented by the circle, while the slices of pie are represented by the segments of the circle. The size of each slice is proportional to the quantity it represents.
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the pie chart of the day with percentage
+plt.pie(data['day'].value_counts(), labels=data['day'].unique(), autopct='%1.1f%%')
+plt.title('Pie chart of Day') # to set the title
+plt.show() # to show the figure
+
+```
+
+### Line plot
+
+**Line plot** is a type of plot that shows the data as a collection of points. The position of a point depends on its two-dimensional value, where each value is a position on either the horizontal or vertical dimension. 
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the line plot of the total bill
+plt.plot(data['total_bill']) # bins = number of bar in figure
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Line plot of Total Bill') # to set the title
+plt.show() # to show the figure
+
+```
+
+## Seaborn
+
+Seaborn is a high-level interface based on the Matplotlib framework. It has wonderful design styles and color palettes to help you create more visually appealing graphs.
+
+Because Seaborn is developed on top of Matplotlib, it may also be used with Matplotlib. It is relatively simple to use Matplotlib and Seaborn together. Simply call the Seaborn Plotting method as usual, and then utilize Matplotlib's customisation function.
+
+### Line plot (Seaborn with Matplotlib)
+
+```{python}
+
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load data using pandas
+data = pd.read_csv("tips.csv")
+
+# draw lineplot
+sns.lineplot(x="sex", y="total_bill", data=data)
+ 
+# setting the title using Matplotlib
+plt.title('Title using Matplotlib Function')
+ 
+plt.show()
+
+```
+
+### Histogram
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the histogram of the total bill with percentage
+sns.histplot(data['total_bill'], bins=10, stat='probability') # bins = number of bar in figure
+# stat='probability' normalizes the histogram so that the area under the histogram equals 1, effectively turning the counts into probabilities or percentages. In other words, it transforms the histogram into a probability density function.
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Frequency (percentage)') # to set the y-axis label
+plt.title('Histogram of Total Bill') # to set the title
+plt.show() # to show the figure
+
+# To plot the histogram of the total bill
+sns.histplot(x='total_bill', data=data, kde=True, hue='sex')
+# kde=True adds a kernel density estimate to the histogram, which is a smooth representation of the distribution of the data. This is useful because it allows us to see the shape of the distribution without being concerned about the specific values of the data.
+# hue is used to separate the data by a categorical variable
+plt.xlabel('Total Bill') # to set the x-axis label
+plt.ylabel('Count') # to set the y-axis label
+plt.title('Histogram of Total Bill') # to set the title 
+plt.show()
+
+```
+
+### Scatter Plot
+
+If you wish to color each point in this plot according to the sex, you'll find it difficult to do so with Matplotlib. However, with a scatter plot, it is possible to do so using the hue option.
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the scatter plot of the total bill and tip
+sns.scatterplot(x='day', y='tip', data=data, hue='sex')
+plt.xlabel('Day') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Scatter plot of Day and Tip') # to set the title
+plt.show() # to show the figure
+
+```
+
+### Bar plot
+
+```{python}
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# To plot the bar plot of the total bill
+sns.barplot(x='day',y='tip', data=data, hue='sex')
+plt.xlabel('Day') # to set the x-axis label
+plt.ylabel('Tip') # to set the y-axis label
+plt.title('Bar plot of Total Bill') # to set the title
+plt.show() # to show the figure
+
+# the vertical lines or error bars show the level of uncertainty or variation in the 'tip' values for each combination of 'day' and 'sex'. The longer the line, the more uncertain we are about the 'tip' value for that combination.
+
+```
+
+## Bokeh
+
+Bokeh is most well-known for its interactive chart presentation. Bokeh's plots are rendered in HTML and JavaScript, which are used in current web browsers to show attractive, compact constructions of innovative images with high-level interaction. 
+
+### Line plot
+
+```{python}
+
+# importing the modules
+from bokeh.plotting import figure, output_file, show
+import pandas as pd
+
+# Load data using pandas
+data = pd.read_csv("tips.csv")
+
+# output to static HTML file
+output_file("lines.html")
+
+# create a new plot with a title and axis labels
+p = figure(title="Line plot of Total Bill", x_axis_label='Total Bill', y_axis_label='Tip')
+
+# add a line renderer with legend and line thickness
+p.line(data['total_bill'], data['tip'], legend_label="Total Bill", line_width=2)
+
+# show the results
+show(p)
+
+```
+
+### Scatter plot
+
+```{python}
+
+from bokeh.plotting import figure, show
+from bokeh.transform import linear_cmap
+from bokeh.models import ColorBar
+from bokeh.models.mappers import LinearColorMapper
+from bokeh.palettes import magma
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# output to static HTML file
+output_file("scatter.html")
+
+# instantiating the figure object
+graph = figure(title="Bokeh Scatter Graph")
+
+# x-axis label
+graph.xaxis.axis_label = "Total Bill"
+
+# y-axis label
+graph.yaxis.axis_label = "Tip"
+
+# color mapper 
+color = magma(256)
+ 
+# plotting the graph
+graph.scatter(data['total_bill'], data['tip'], color=color)
+ 
+# displaying the model
+show(graph)
+
+```
+
+### Interactive Data Visualization
+
+One of the most important aspects of *Bokeh* is the addition of interactivity to the plots. Let's look at some of the possible interactions.
+
+The click_policy parameter of *Interactive Legends* makes the legend interactive. Interactivity is classified into two types:
+
+- *Hiding*: Keep the Glyphs hidden.
+- *Muting*: While hiding the glyph fully removes it, muting the glyph only de-emphasizes the glyph depending on the settings.
+
+```{python}
+
+# importing the modules
+from bokeh.plotting import figure, output_file, show
+import pandas as pd
+
+
+# instantiating the figure object
+graph = figure(title = "Bokeh Bar Chart")
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# output to static HTML file
+output_file("inter.html")
+
+# plotting the graph
+graph.vbar(data['total_bill'], top=data['tip'], 
+		legend_label = "Bill VS Tips", color='green')
+
+graph.vbar(data['tip'], top=data['size'], 
+		legend_label = "Tips VS Size", color='red')
+
+graph.legend.click_policy = "hide" # set interactive legend, allowing users to click on items to hide them.
+
+# displaying the model
+show(graph)
+
+
+```
+
+**FYI**
+*Including Widgets*
+Bokeh has GUI elements comparable to HTML forms, such as buttons, sliders, and checkboxes. These give an interactive interface to the plot, allowing you to change plot parameters, amend plot data, and so on. Let's look at how to utilize and add some frequently used widgets. 
+
+- *Buttons*: Adds a basic button widget to the plot with this widget. We must give a custom JavaScript function to the models class's CustomJS() method.
+- *CheckboxGroup*: Inserts a regular check box into the plot. Similarly to buttons, we must supply the custom JavaScript function to the models class's CustomJS() method.
+- *RadioGroup*: This class adds a basic radio button and takes a JavaScript function.
+- *Sliders*: This function adds a slider to the plot. A custom JavaScript function is also required.
+
+Please keep in mind that all of these buttons will open in a new tab.
+
+## Plotly
+
+Plotly has hover tool capabilities that allow us to detect any outliers or anomalies in numerous data points.
+It allows more customization.
+It makes the graph visually more attractive.
+
+### Line plot
+
+```{python}
+
+# importing the modules
+import plotly.express as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the graph
+fig = px.line(data, x="total_bill", y="tip", title='Line plot of Total Bill')
+
+# x-axis label
+fig.update_xaxes(title_text='Total Bill')
+
+# y-axis label
+fig.update_yaxes(title_text='Tip')
+
+# displaying the model
+fig.show()
+
+```
+
+```{python}
+
+import plotly.express as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the scatter chart
+fig = px.line(data, y='tip', color='sex')
+
+# showing the plot
+fig.show()
+
+
+```
+
+
+### Scatter plot
+
+```{python}
+
+# importing the modules
+import plotly.express as px
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the graph
+fig = px.scatter(data, x="total_bill", y="tip", title='Scatter plot of Total Bill')
+
+# x-axis label
+fig.update_xaxes(title_text='Total Bill')
+
+# y-axis label
+fig.update_yaxes(title_text='Tip')
+
+# displaying the model
+fig.show()
+
+```
+
+
+```{python}
+
+import plotly.express as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the scatter chart
+fig = px.scatter(data, x="day", y="tip", color='sex')
+
+# showing the plot
+fig.show()
+
+```
+
+
+### Bar plot
+
+```{python}
+
+# importing the modules
+import plotly.express as px
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the graph
+fig = px.bar(data, x="day", y="tip", title='Bar plot of Total Bill')
+
+# x-axis label
+fig.update_xaxes(title_text='Total Bill')
+
+# y-axis label
+fig.update_yaxes(title_text='Tip')
+
+# displaying the model
+fig.show()
+
+```
+
+
+```{python}
+
+import plotly.express as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the scatter chart
+fig = px.bar(data, x='day', y='tip', color='sex', title='Bar plot of Total Bill')
+
+# x-axis label
+fig.update_xaxes(title_text='Total Bill')
+
+# y-axis label
+fig.update_yaxes(title_text='Tip')
+
+# showing the plot
+fig.show()
+
+```
+
+
+### Histogram
+
+```{python}
+
+import plotly.express as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+# plotting the scatter chart
+fig = px.histogram(data, x='total_bill', color='sex')
+
+# x-axis label
+fig.update_xaxes(title_text='Total Bill')
+
+# showing the plot
+fig.show()
+
+
+```
+
+### Adding interaction
+
+Plotly, like Bokeh, offers a variety of interactions.
+
+*Creating a Dropdown Menu*: A drop-down menu is a component of the menu-button that is always visible on a screen. When a menu button is clicked, a Menu widget displays the available options for that menu button. When utilizing the updatemenu method in plotly, there are four options for modifying the charts.
+
+- *restyle*: change the data or data characteristics
+- *relayout*: change the layout characteristics
+- *change*: alter data and layout characteristics
+- *animate*: begin or stop an animation
+
+```{python}
+
+import plotly.graph_objects as px
+import pandas as pd
+
+# reading the database
+data = pd.read_csv("tips.csv")
+
+
+plot = px.Figure(data=[px.Scatter(
+	x=data['day'],
+	y=data['tip'],
+	mode='markers',)
+])
+
+# Add dropdown
+plot.update_layout(
+	updatemenus=[ # to add dropdown menu
+		dict(
+			buttons=list([
+				dict(
+					args=["type", "scatter"],
+					label="Scatter Plot",
+					method="restyle"
+				),
+				dict(
+					args=["type", "bar"],
+					label="Bar Chart",
+					method="restyle"
+				)
+			]),
+			direction="down",
+		),
+	]
+)
+
+plot.show()
+
+```
+
+There are much more interactive features in Plotly. You can find more information [here](https://plotly.com/python/).
+
+## Conclusion
+
+In this lecture, we have learned how to visualize data using Python. We have used the following libraries: Matplotlib, Seaborn, Bokeh, and Plotly. We have learned how to create different types of graphs, such as histograms, bar plots, scatter plots, box plots, pie charts, and line plots. We have also learned how to add interactivity to the graphs. 
+
+You see that Python has a reach set of tools for data visualization. You can choose the one that suits your needs the best.
+
+# Credits
+
+To prepere this materials I have used and modified the following sources:
+GeeksforGeeks. [Data Visualization with Python](https://www.geeksforgeeks.org/data-visualization-with-python/)
