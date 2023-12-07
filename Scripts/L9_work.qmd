@@ -1,0 +1,329 @@
+---
+title: "Lecture 9: Statistical Methods in Python"
+subtitle: "Inferences and Regressions"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+
+---
+
+# Loading needed modules / libraries and data
+
+```{python echo=FALSE}
+#install needed modules if you do not have them
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+
+import numpy as np
+#pip install scipy
+from scipy import stats
+import pandas as pd
+import seaborn as sns
+#pip install statsmodels
+import statsmodels.api as sm
+
+```
+
+# Confidence Interval Calculation
+
+## Dataset intro
+
+The dataset we will be using is python example dataset called 'iris'. The iris dataset is a famous multivariate dataset in Python that contains measurements for different parts of flowers belonging to three different species of iris: setosa, versicolor, and virginica.
+
+
+The iris dataset contains 150 observations, with 50 observations for each of the three iris species. For each observation, the following four measurements are recorded: Sepal length (in cm), Sepal width (in cm), Petal length (in cm), Petal width (in cm).
+
+## Loading data
+```{python}
+# Load the Iris dataset
+iris_data = sns.load_dataset("iris")
+
+# Display first 5 rows of the dataset
+iris_data.head()
+
+```
+## Confidence Interval Calculation Formula
+
+Let’s calculate the 95% confidence interval for population mean of Sepal.Length.
+Recall the formula of confidence interval.
+
+**Confidence Interval Calculation = Mean of Sample ± Standard Error**
+
+So, to calculate the confidence interval first we need to calculate:
+
+- Mean
+- Test statistic (t-value in our case)
+- Standard error
+
+## Calculation of the sample mean
+
+```{python}
+# Extract the sepal_length column
+sepal_length_data = iris_data['sepal_length']
+
+# Calculate the mean of the sample data
+mean_value = np.mean(sepal_length_data)
+print(mean_value)                    
+
+```
+
+## Calculation of the test statistics (t-value)
+
+```{python}
+# Compute the size of the sample
+n = len(sepal_length_data)
+print(n)
+```
+
+```{python}
+# Assign the alpha
+alpha = 0.05
+
+# Compute the degree of freedom
+degrees_of_freedom = n - 1
+print(degrees_of_freedom)
+```
+
+```{python}
+# Use the t.ppf() function to calculate the t-score for a given level of significance (alpha) and degrees of freedom.
+t_score = stats.t.ppf(1 - alpha/2, degrees_of_freedom)
+print(t_score)
+
+```
+
+For lower tail the t-value will be -1.97.
+
+## Standard Error Calculation 
+
+```{python}
+# Find the standard deviation
+standard_deviation = np.std(sepal_length_data, ddof=1)
+print(standard_deviation)
+```
+
+```{python}
+# Find the standard error
+standard_error = standard_deviation / np.sqrt(n)
+print(standard_error)
+```
+
+## Calculation the confidence interval
+```{python}
+# Calculating lower bound and upper bound
+lower_bound = mean_value - t_score * standard_error
+upper_bound = mean_value + t_score * standard_error
+
+# Print the confidence interval
+print([lower_bound, upper_bound])
+```
+
+# Hypothesis Testing Practical Examples
+
+## State the null and alternative hypothesis
+
+Going back to our iris example, consider the situation where we wish to determine whether the mean Sepal Length is 6 or not at the 0.05 level of significance.
+
+**Null hypothesis:** The mean Sepal Length of the iris population is equal to 6.
+**Alternative hypothesis:** The mean Sepal Length of the iris population is not equal to 6.
+
+## Two-tailed test
+```{python}
+# Test whether mean sepal_length is equal to 6
+t_stat, p_value = stats.ttest_1samp(iris_data['sepal_length'], 6)
+
+print("Two-sided test:")
+print("t-statistic:", t_stat)
+print("p-value:", p_value)
+```
+
+**Conclusion:**
+p-value < 0.05 level of significance, 
+which suggests that the null hypothesis can be rejected in favor of the alternative hypothesis.
+**The mean sepal_length is NOT equal to 6 at 0.05 level of significance.**
+
+## One-tailed test (**right**-tailed test)
+```{python}
+# Test whether mean sepal_length >= 6 (right-tailed test)
+t_stat, p_value = stats.ttest_1samp(iris_data['sepal_length'], 6, alternative='greater')
+print("Right-tailed test:")
+print("t-statistic:", t_stat)
+print("p-value:", p_value)
+```
+
+**Conclusion:**
+p-value > 0.05 level of significance, 
+which suggests that the null hypothesis can NOT be rejected in favor of the alternative hypothesis.
+**The mean sepal_length is NOT greater than 6 at 0.05 level of significance.**
+
+## One-tailed test (**left**-tailed test)
+```{python}
+# Test whether mean sepal_length <= 6 (left-tailed test)
+t_stat, p_value = stats.ttest_1samp(iris_data['sepal_length'], 6, alternative='less')
+print("Left-tailed test:")
+print("t-statistic:", t_stat)
+print("p-value:", p_value)
+```
+
+**Conclusion:**
+p-value < 0.05 level of significance, 
+which suggests that the null hypothesis can be rejected in favor of the alternative hypothesis.
+**The mean sepal_length is NOT equal to 6 at 0.05 level of significance.**
+
+
+## Two-sample test 
+```{python}
+# Two-sample t-test for Sepal.Length and Petal.Length
+t_stat, p_value = stats.ttest_ind(iris_data['sepal_length'], iris_data['petal_length'])
+print("Two-sample test:")
+print("t-statistic:", t_stat)
+print("p-value:", p_value)
+```
+
+**Conclusion:**
+p-value < 0.05 level of significance, 
+which suggests that the null hypothesis can be rejected in favor of the alternative hypothesis.
+**Difference in means of sepal_length and petal_length is not equal to 0 at 0.05 level of significance.**
+
+# Regression
+
+
+## Dataset intro
+
+The table taiwan_data contains information related to real estate properties in Taiwan. 
+Here is a brief description of each column:
+
+dist_to_mrt_m: The distance of the property to the nearest Mass Rapid Transit (MRT) station in meters.
+n_convenience: The number of convenience stores located near the property.
+
+house_age_years: The age of the property in years.
+
+price_twd_msq: The price of the property per square meter in New Taiwan Dollars (TWD).
+
+
+## Loading data
+```{python}
+taiwan_data = pd.read_csv("taiwan_data.csv")
+
+# Display the top rows of the dataset
+print(taiwan_data.head())
+```
+
+## Simple Linear Regression
+```{python}
+# Run a linear regression of price_twd_msq vs. n_convenience
+X = taiwan_data['n_convenience']
+X = sm.add_constant(X)  # Adding an intercept term
+
+y = taiwan_data['price_twd_msq']
+
+model = sm.OLS(y, X).fit()
+
+# Print model summary
+print(model.summary())
+
+```
+
+**In other words:**
+price_twd_msq = 8.2242 + 0.7981 * n_convenience.
+
+The coefficient of n_convenience of **0.7981** indicates that for each additional unit increase in n_convenience, the expected value of price_twd_msq increases by 0.7981, all else being equal.
+
+Extremely small p-value (p-value < 0.05) suggests that the number of convenience stores nearby is a **statistically significant** predictor of the price per square meter of real estate in Taiwan.
+
+**In other words**, the result suggests that the coefficient for n_convenience is significantly different from zero and <u>we can reject the null hypothesis</u> that there is no relationship between the number of convenience stores nearby and the price per square meter of real estate.
+
+**The R-squared value** of 0.326 indicates that about 32.6% of the variability in price_twd_msq can be explained by the linear relationship with n_convenience.
+**The adjusted R-squared value** of 0.324 is similar, but takes into account the number of predictors in the model.
+Note, that a low R-squared value suggests that the model explains only <u>a small proportion of the variance</u> in the dependent variable.
+
+**An F-statistic of 199.3** indicates that the regression model is statistically significant, showing that the independent variable n_convenience has a significant impact on the dependent variable price_twd_msq.
+
+## Multiple linear regression
+
+```{python}
+# Run a linear regression of price_twd_msq vs. n_convenience and dist_to_mrt_m
+X = taiwan_data[['n_convenience', 'dist_to_mrt_m']]
+X = sm.add_constant(X)  # Add a constant (intercept) term
+y = taiwan_data['price_twd_msq']
+model = sm.OLS(y, X).fit()
+
+# Print the results
+print(model.summary())
+```
+
+**In other words:**
+price_twd_msq = 11.8375 + 0.3624 * n_convenience - 0.0017 * dist_to_mrt_m
+
+For every one unit increase in n_convenience, the predicted value of the dependent variable increases by 0.3624, and for every one unit increase in dist_to_mrt_m, the predicted value of the dependent variable decreases by 0.0017. 
+
+Both coefficients are statistically significant with a p-value less than 0.05. 
+
+Therefore, the model is a good fit for the data and can be used to predict the dependent variable based on the values of the independent variables.
+
+The model is significant, as indicated by the low p-value and the multiple R-squared value of 0.497. 
+
+This suggests that the model explains a moderate proportion of the variance in the dependent variable.
+
+## Make a prediction
+```{python}
+# Define the values for n_convenience and dist_to_mrt_m for prediction
+n_convenience = 5
+dist_to_mrt_m = 300
+
+# Create a new data point for prediction
+new_data_point = np.array([1, n_convenience, dist_to_mrt_m])
+
+# Use the fitted model to make a prediction
+predicted_price = model.predict(new_data_point)
+
+print(predicted_price)
+```
+
+**Which means that:**
+for property which has 5 convenience stores located nearby and which is located in a distance of 300 m to the nearest MRT station, the price of the property should be 13.14 New Taiwan Dollars per square meter.
+
+
+# In-class Assignment
+
+The data set “mtcars” you’ll be working with contains information on fuel consumption and performance of various car models. 
+```{python}
+
+mtcars = pd.read_csv("https://gist.githubusercontent.com/seankross/a412dfbd88b3db70b74b/raw/5f23f993cd87c283ce766e7ac6b329ee7cc2e1d1/mtcars.csv")
+
+
+mtcars.head()
+
+# Save the DataFrame to a CSV file
+mtcars.to_csv("mtcars_saved.csv", index=False)
+
+```
+
+mpg: Miles/(US) gallon
+cyl: Number of cylinders
+disp: Displacement (cu.in.)
+hp: Gross horsepower
+drat: Rear axle ratio
+wt: Weight (lb/1000)
+qsec: 1/4 mile time
+vs: V/S (0 = V-shaped, 1 = straight)
+am: Transmission (0 = automatic, 1 = manual)
+gear: Number of forward gears
+carb: Number of carburetors
+
