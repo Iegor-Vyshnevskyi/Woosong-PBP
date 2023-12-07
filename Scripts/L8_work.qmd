@@ -1,0 +1,646 @@
+---
+title: "Lecture 8: Text Analytics with Python"
+subtitle: "Practical Business Python"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+---
+
+# Step 1: Data Collection
+
+The initial stage in every text mining project is data collecting. You must collect text data from numerous sources, such as websites, social media platforms, and corporate databases. Python has various libraries, such as 'requests' and 'BeautifulSoup', to help you scrape and grab data from the web.
+
+## 1.1. Web Scraping
+
+Web scraping is the process of extracting data from websites. It is a quick and efficient method of obtaining data from the web. The following are some of the most popular Python libraries for web scraping:
+
+- **Requests** is a Python library that allows you to send HTTP requests.
+- **BeautifulSoup** is a Python library for extracting data from HTML and XML files.
+- **Selenium** is a Python library for automating web browsers.
+
+## 1.2. Web Crawling
+
+Web crawling is the process of extracting data from the web using a crawler. A crawler is a program that visits websites and reads their pages and other information to create entries for a search engine index. 
+
+## 1.3. APIs
+
+An API (Application Programming Interface) is a set of functions that allows you to access data or features of an application or service. 
+
+## Example 1: Web Scraping
+
+### 1.1. Import Libraries
+
+``` {python}
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+```
+
+### 1.2. Get the HTML
+
+``` {python}
+# get the HTML code of the website
+url = 'https://www.imdb.com/search/title/?release_date=2021&sort=num_votes,desc&page=1'
+
+response = requests.get(url)
+
+response.status_code
+```
+
+### 1.3. Parse the HTML
+
+``` {python }
+# parse the HTML code
+soup = BeautifulSoup(response.content, 'html.parser')
+
+# too long to print
+#print(soup.prettify())
+```
+
+### 1.4. Extract the Data
+
+``` {python}
+# extract the data
+movie_containers = soup.find_all('div', class_ = 'lister-item mode-advanced')
+
+print(type(movie_containers))
+print(len(movie_containers))
+```
+
+### 1.5. Extract the Data for One Movie
+
+``` {python}
+# extract the data for one movie
+first_movie = movie_containers[0]
+
+# too long to print
+#print(first_movie)
+```
+
+### 1.6. Extract the Name
+
+``` {python}
+# extract the name
+first_name = first_movie.h3.a.text
+first_name
+
+```
+
+### 1.7. Extract the Year
+
+``` {python}
+# extract the year
+first_year = first_movie.h3.find('span', class_ = 'lister-item-year').text
+first_year
+```
+
+### 1.8. Extract the IMDB Rating
+
+``` {python}
+# extract the IMDB rating
+first_imdb = float(first_movie.strong.text)
+first_imdb
+```
+
+### 1.9. Extract the Metascore
+
+``` {python}
+# extract the Metascore
+first_mscore = first_movie.find('span', class_ = 'metascore').text
+first_mscore = int(first_mscore)
+first_mscore
+```
+
+### 1.10. Extract the Movie Description
+
+``` {python}
+# extract the movie description
+first_description = first_movie.find_all('p', class_ = 'text-muted')[1].text
+
+first_description
+```
+
+
+### 1.11. Extract the Number of Votes
+
+``` {python}
+# extract the number of votes
+first_votes = first_movie.find('span', attrs = {'name':'nv'})['data-value']
+
+first_votes
+```
+
+### 1.12. Extract the information for all of the movies
+
+``` {python}
+# extract the information for all of the movies
+names = []
+years = []
+imdb_ratings = []
+metascores = []
+votes = []
+descriptions = []
+
+# Extract data from individual movie container
+for container in movie_containers:
+    
+    # If the movie has Metascore, then extract:
+    if container.find('div', class_ = 'ratings-metascore') is not None:
+        
+        # The name
+        name = container.h3.a.text
+        names.append(name)
+        
+        # The year
+        year = container.h3.find('span', class_ = 'lister-item-year').text
+        years.append(year)
+        
+        # The IMDB rating
+        imdb = float(container.strong.text)
+        imdb_ratings.append(imdb)
+        
+        # The Metascore
+        m_score = container.find('span', class_ = 'metascore').text
+        metascores.append(int(m_score))
+        
+        # The number of votes
+        vote = container.find('span', attrs = {'name':'nv'})['data-value']
+        votes.append(int(vote))
+        
+        # The description
+        description = container.find_all('p', class_ = 'text-muted')[1].text
+        descriptions.append(description)
+```
+
+### 1.13. Create a DataFrame
+
+``` {python}
+# create a DataFrame
+test_df = pd.DataFrame({'movie': names,
+                       'year': years,
+                       'imdb': imdb_ratings,
+                       'metascore': metascores,
+                       'votes': votes,
+                       'description': descriptions})
+
+print(test_df.info())
+
+test_df
+```
+
+### 1.14. Clean the Data
+
+``` {python}
+# clean the data
+test_df['year'].unique()
+```
+
+``` {python}
+
+test_df.loc[:, 'year'] = test_df['year'].str[-5:-1].astype(int)
+
+test_df['year'].head(3)
+```
+
+``` {python}
+
+test_df['n_imdb'] = test_df['imdb'] * 10
+
+test_df.head(3)
+```
+
+``` {python}
+
+test_df['n_imdb'].head(3)
+```
+
+### 1.15. Exploratory Analysis and Visualization
+
+``` {python}
+# summary statistics
+test_df.describe().T
+```
+
+``` {python}
+# histograms
+sns.set_style('whitegrid')
+
+fig, ax = plt.subplots(figsize = (10, 8))
+
+ax.hist(test_df['n_imdb'], bins = 10, edgecolor = 'black', color = 'lightblue')
+
+ax.set_title('Distribution of IMDB Ratings', fontsize = 15)
+
+ax.set_xlabel('IMDB Rating', fontsize = 15)
+
+ax.set_ylabel('Frequency', fontsize = 15)
+
+plt.show()
+```
+
+``` {python}
+# histograms
+fig, ax = plt.subplots(figsize = (10, 8))
+
+ax.hist(test_df['metascore'], bins = 10, edgecolor = 'black', color = 'lightblue')
+
+
+ax.set_title('Distribution of Metascores', fontsize = 15)
+
+ax.set_xlabel('Metascore', fontsize = 15)
+
+ax.set_ylabel('Frequency', fontsize = 15)
+
+plt.show()
+```
+
+``` {python}
+# scatter plots
+fig, ax = plt.subplots(figsize = (10, 8))
+
+ax.scatter(test_df['n_imdb'], test_df['metascore'], edgecolor = 'black', color = 'lightblue')
+
+ax.set_title('IMDB Ratings vs. Metascores', fontsize = 15)
+
+ax.set_xlabel('IMDB Rating', fontsize = 15)
+
+ax.set_ylabel('Metascore', fontsize = 15)
+
+plt.show()
+```
+
+``` {python}
+# scatter plots
+sns.set_style('whitegrid')
+
+fig, ax = plt.subplots(figsize = (10, 8))
+
+ax = sns.regplot(x = test_df['n_imdb'], y = test_df['metascore'], color = 'lightblue')
+
+ax.set_title('IMDB Ratings vs. Metascores', fontsize = 15)
+
+ax.set_xlabel('IMDB Rating', fontsize = 15)
+
+ax.set_ylabel('Metascore', fontsize = 15)
+
+plt.show()
+```
+
+# Step 2: Text Preprocessing
+
+## Example 2: Text Preprocessing
+
+``` {python}
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+# pip install textmining3
+
+# Load libraries
+import nltk # natural language toolkit
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+
+import string
+import textmining
+
+nltk.download('stopwords')
+nltk.download('punkt')
+
+```
+
+``` {python}
+
+# Sample text
+# keep  'movie', 'description' from test_df
+
+text = test_df[['movie', 'description']]
+
+text
+
+```
+
+``` {python}
+
+text.shape
+
+```
+
+``` {python}
+# dataframe info
+text.info()
+
+```
+
+## 2.1. Tokenization
+
+``` {python}
+
+# Tokenize the text
+
+import pandas as pd
+from nltk.tokenize import word_tokenize
+
+# Assuming you have a DataFrame named 'text'
+# Make sure to install NLTK if you haven't already: pip install nltk
+import nltk
+nltk.download('punkt')
+
+# Tokenize the "description" column and create a new column for tokens
+text['tokens'] = text['description'].apply(lambda x: word_tokenize(x))
+
+# Display the DataFrame with the tokenized "description" column
+print(text)
+
+
+```
+
+## 2.2. Preprocessing
+
+``` {python}
+
+# pip install contractions
+
+
+import pandas as pd
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+import contractions
+
+# Assuming you have a DataFrame named 'text' with a 'tokens' column
+# Make sure to install NLTK if you haven't already: pip install nltk
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Create a function to remove stopwords, contractions, and perform stemming
+def preprocess_text(tokens):
+    ps = PorterStemmer()
+    stop_words = set(stopwords.words('english'))
+    
+    filtered_tokens = []
+    
+    for token in tokens:
+        # Remove contractions
+        token = contractions.fix(token)
+        # Remove stopwords
+        if token.lower() not in stop_words:
+            # Perform stemming
+            stemmed_token = ps.stem(token)
+            filtered_tokens.append(stemmed_token)
+    
+    return filtered_tokens
+
+# Apply the preprocessing function to the 'tokens' column
+text['processed_tokens'] = text['tokens'].apply(preprocess_text)
+
+# Display the DataFrame with the processed tokens
+print(text)
+
+
+```
+
+# Step 3: Exploratory Data Analysis (EDA)
+
+## 3.1. Word Frequency
+
+### 3.1.1. Word Frequency with NLTK
+
+``` {python}
+
+import pandas as pd
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+import contractions
+from sklearn.feature_extraction.text import CountVectorizer
+
+
+# Assuming you have a DataFrame named 'text' with a 'processed_tokens' column
+# Make sure to install NLTK if you haven't already: pip install nltk
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Create a function to get the top words
+def get_top_words(text, n=10):
+    # Convert the list of tokens back to text
+    text_as_text = [' '.join(tokens) for tokens in text]
+    vec = CountVectorizer().fit(text_as_text)
+    bag_of_words = vec.transform(text_as_text)
+    sum_words = bag_of_words.sum(axis=0)
+    words_freq = [(word, sum_words[0, idx]) for word, idx in vec.vocabulary_.items()]
+    words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
+    return words_freq[:n]
+
+# Apply the function to the 'processed_tokens' column
+top_words = get_top_words(text['processed_tokens'])
+
+# Display the top words
+print(top_words)
+
+```
+
+### 3.1.2. Word Frequency illustration
+
+``` {python}
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Assuming you have a DataFrame named 'text' with a 'processed_tokens' column
+
+# Create a DataFrame with the top words
+top_words_df = pd.DataFrame(top_words, columns=['token', 'count'])
+
+# Create a bar plot of the top words
+top_words_df.plot.bar(x='token', y='count', rot=45, figsize=(10, 5))
+plt.show()
+
+```
+
+
+## 3.2. Word Cloud
+``` {python}
+
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+
+# Combine all processed tokens into a single text
+text1 = ' '.join(' '.join(tokens) for tokens in text['processed_tokens'])
+
+# Create a word cloud
+wordcloud= WordCloud(width=1000,height=500, background_color='white').generate(text1)
+
+# Display the word cloud
+plt.figure(figsize=(10, 5))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis("off")
+plt.show()
+
+```
+
+# Step 4: Text Mining Techniques
+
+## 4.1. Sentiment Analysis
+
+Sentiment Analysis is the process of determining whether a piece of text is positive, negative, or neutral. The following are some of the most popular Python libraries for sentiment analysis:
+
+- **TextBlob** is a Python library for processing textual data.
+- **VADER** is a Python library for sentiment analysis.
+
+**Polarity** is a float that lies between [-1,1], where 1 means positive statement and -1 means a negative statement. 
+**Subjective** sentences generally refer to personal opinion, emotion, or judgment, whereas objective refers to factual information. Subjectivity is also a float that lies between [0,1].
+
+### 4.1.1. Sentiment Analysis with TextBlob
+
+``` {python}
+
+from textblob import TextBlob
+
+# Assuming you have a DataFrame named 'text' with a 'processed_tokens' column
+# Make sure to install TextBlob if you haven't already: pip install textblob
+import textblob
+nltk.download('averaged_perceptron_tagger')
+
+# Create a function to get the polarity
+def get_polarity(text):
+    textblob = TextBlob(str(text))
+    pol = textblob.sentiment.polarity
+    return round(pol,3)
+
+# Create a function to get the subjectivity
+def get_subjectivity(text):
+    textblob = TextBlob(str(text))
+    subj = textblob.sentiment.subjectivity
+    return round(subj,3)
+
+# Apply the functions to the 'processed_tokens' column
+text['polarity'] = text['processed_tokens'].apply(get_polarity)
+text['subjectivity'] = text['processed_tokens'].apply(get_subjectivity)
+
+# Display the DataFrame with the new columns
+print(text)
+
+```
+
+#### Visualize the Sentiment Analysis
+
+``` {python}
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Assuming you have a DataFrame named 'text' with a 'polarity' and 'subjectivity' column
+
+# Create a scatter plot of the polarity and subjectivity
+plt.figure(figsize=(10, 5))
+plt.scatter(text['polarity'], text['subjectivity'], color='blue')
+plt.title('Sentiment Analysis', fontsize=20)
+plt.xlabel('Polarity', fontsize=15)
+plt.ylabel('Subjectivity', fontsize=15)
+plt.show()
+
+```
+
+
+### 4.1.2. Sentiment Analysis with VADER
+
+``` {python}
+
+import pandas as pd
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+import contractions
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Assuming you have a DataFrame named 'text' with a 'processed_tokens' column
+# Make sure to install NLTK and download the required data (tokenizers, stopwords) using `nltk.download`
+
+# Function to join a list of tokens into a single string
+def join_tokens(tokens):
+    return ' '.join(tokens)
+
+text['processed_text'] = text['processed_tokens'].apply(join_tokens)
+
+# Create a function to get sentiment scores
+def get_sentiment(text):
+    sia = SentimentIntensityAnalyzer()
+    sentiment = sia.polarity_scores(text)
+    return sentiment
+
+# Apply the sentiment analysis function to the 'processed_text' column
+text['sentiment_scores'] = text['processed_text'].apply(get_sentiment)
+
+# Display the DataFrame with the sentiment scores
+print(text)
+
+```
+
+## 4.2. Topic Modeling
+
+Topic Modeling is the process of identifying topics in a piece of text. The following are some of the most popular Python libraries for topic modeling:
+
+
+
+# Step 5: Machine Learning Models
+
+You may train machine learning models to accomplish tasks such as classification, clustering, and recommendation based on your text mining goals. 'Scikit-learn' and 'TensorFlow' are two popular text categorization packages.
+
+
+# In-class practice
+
+``` {python}
+
+# Open the ‘Twitter Data.csv’ file
+
+import pandas as pd
+
+data = pd.read_csv('Twitter Data.csv')
+
+data.head(3)
+
+# Analyze the data
+
+data.info()
+
+# Perform a text analysis on the ‘text’ column
+
+```
+
+
+
+
+
