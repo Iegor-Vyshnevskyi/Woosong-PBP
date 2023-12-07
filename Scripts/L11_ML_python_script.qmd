@@ -1,0 +1,277 @@
+---
+title: "Lecture 12: Intro to Machine Learning in Python"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+
+---
+
+# Loading needed modules / libraries and data
+
+```{python echo=FALSE}
+#install needed modules if you do not have them
+# linear algebra
+#pip install numpy 
+# data processing, CSV file I/O (e.g. pd.read_csv)
+#pip install pandas 
+# this is used for the plot the graph
+#pip install matplotlib 
+# used for plot both static and interactive graph.
+#pip install seaborn 
+# to install scikit-learn library
+#pip install scikit-learn
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import sklearn
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+```
+
+## Loading data
+```{python}
+# Load the Iris dataset
+iris = sns.load_dataset("iris")
+```
+# Initial Overview of the Data Set
+
+```{python}
+# Display the first few rows of the dataset
+print(iris.head())
+```
+
+
+```{python}
+# Display summary statistics of the dataset
+print(iris.describe())
+```
+
+```{python}
+# For more details about the dataset
+print(iris.info())
+```
+
+# Vizual Overview of the Data Set
+## Sepal Length vs Sepal Width
+```{python}
+import matplotlib.pyplot as plt
+import pandas as pd
+
+plt.clf()  #clean the plot from previous modifications, if any
+# Iterate over unique species and create separate scatter plots for each
+for species in iris['species'].unique():
+    species_data = iris[iris['species'] == species]
+    plt.scatter(species_data['sepal_length'], species_data['sepal_width'], label=species)
+
+# Adding labels and title
+plt.xlabel('Sepal Length')
+plt.ylabel('Sepal Width')
+plt.title('Iris Scatter Plot (Sepal Length vs Sepal Width)')
+
+# Adding legend
+plt.legend()
+
+# Show the plot
+plt.show()
+
+
+```
+
+You see that there is a high correlation between the sepal length and the sepal width of the Setosa iris flowers, while the correlation is somewhat less high for the Virginica and Versicolor flowers: the data points are more spread out over the graph and don’t form a cluster like you can see in the case of the Setosa flowers.
+
+## Petal Length vs Petal Width
+```{python}
+
+
+
+plt.clf()  #clean the plot from previous modifications, if any
+# Iterate over unique species and create separate scatter plots for each
+for species in iris['species'].unique():
+    species_data = iris[iris['species'] == species]
+    plt.scatter(species_data['petal_length'], species_data['petal_width'], label=species)
+
+# Adding labels and title
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+plt.title('Iris Scatter Plot (Petal Length vs Petal Width)')
+
+# Adding legend
+plt.legend()
+
+# Show the plot
+plt.show()
+
+```
+
+The scatter plot that maps the petal length and the petal width tells a similar story:
+You see that this graph indicates a positive correlation between the petal length and the petal width for all different species that are included into the Iris data set.
+
+# Normalization
+
+As a part of your data preparation, you might need to normalize your data so that its consistent. For this introductory tutorial, just remember that normalization makes it easier for the KNN algorithm to learn.
+So when do we need to normalize a dataset? 
+
+In short: when we suspect that the data is not consistent. 
+
+We can easily see this when we go through the results of the summary() function. Look at the minimum and maximum values of all the (numerical) attributes. If we see that one attribute has a wide range of values, we will need to normalize a dataset, because this means that the distance will be dominated by this feature. 
+
+For example, if a dataset has just two attributes, X and Y, and X has values that range from 1 to 1000, while Y has values that only go from 1 to 100, then Y's influence on the distance function will usually be overpowered by X's influence. When you normalize, you actually adjust the range of all features, so that distances between variables with larger ranges will not be overemphasised.
+
+
+**Iris dataset doesn't need to be normalized.**
+
+# Training and Test Sets
+
+- We need to make sure that all three classes of species are present in the training model. 
+- What’s more, the amount of instances of all three species needs to be more or less equal so that you do not favour one or the other class in your predictions.
+
+**In order to assess the model’s performance later, we will need to divide the data set into two parts: a training set and a test set.**
+
+**the most common splitting choice is to take 2/3 of the original data set as the training set, while the 1/3 that remains will compose the test set.**
+
+
+
+```{python}
+# Set seed for reproducibility
+np.random.seed(1234)
+
+# Split the data into training and testing sets
+ind = np.random.choice([1, 2], size=len(iris), replace=True, p=[0.67, 0.33])
+iris_training = iris[ind == 1].iloc[:, :4]
+iris_test = iris[ind == 2].iloc[:, :4]
+iris_train_labels = iris[ind == 1]['species']
+iris_test_labels = iris[ind == 2]['species']
+
+
+print(iris_training.head())
+
+```
+
+```{python}
+print(iris_test.head())
+```
+
+
+- To make a training and test sets, we first set a seed. This is a number of R's random number generator.
+- Then, we want to make sure that the Iris data set is shuffled and that we have the same ratio between species in the training and test sets. We use the random.choice() function to take a sample with a size that is set as the number of rows of the Iris data set, or 150. We sample with replacement: we choose from a vector of 2 elements and assign either 1 or 2 to the 150 rows of the Iris data set. The assignment of the elements is subject to probability weights of 0.67 and 0.33.
+**Note** that the replace argument is set to TRUE: this means that we assign a 1 or a 2 to a certain row and then reset the vector of 2 to its original state. This means that, for the next rows in the data set, we can either assign a 1 or a 2, each time again. The probability of choosing a 1 or a 2 should not be proportional to the weights amongst the remaining items, so we specify probability weights.
+- **Remember** that we want the training set to be 2/3 of the original data set: that is why we assign “1” with a probability of 0.67 and the “2"s with a probability of 0.33 to the 150 sample rows.
+
+
+
+In addition to the 2/3 and 1/3 proportions specified above, we don't take into account all attributes to form the training and test sets. 
+
+Specifically, you only take Sepal.Length, Sepal.Width, Petal.Length and Petal.Width. 
+
+This is because **we actually want to predict the fifth attribute, Species: it is our target variable.**
+
+However, we do want to include it into the KNN algorithm, otherwise there will never be any prediction for it. We therefore need to store the class labels in factor vectors and divide them over the training and test sets.
+
+
+## Training and Test Sets: sampling check
+
+We want to visually check the distribution of both sets
+
+```{python}
+
+# Sepal.Length
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 4, 1)
+sns.kdeplot(iris_training['sepal_length'], label='Training', color='blue')
+sns.kdeplot(iris_test['sepal_length'], label='Testing', color='orange', linestyle='--')
+plt.title('Sepal Length')
+
+# Sepal.Width
+plt.subplot(1, 4, 2)
+sns.kdeplot(iris_training['sepal_width'], label='Training', color='blue')
+sns.kdeplot(iris_test['sepal_width'], label='Testing', color='orange', linestyle='--')
+plt.title('Sepal Width')
+
+# Petal.Length
+plt.subplot(1, 4, 3)
+sns.kdeplot(iris_training['petal_length'], label='Training', color='blue')
+sns.kdeplot(iris_test['petal_length'], label='Testing', color='orange', linestyle='--')
+plt.title('Petal Length')
+
+# Petal.Width
+plt.subplot(1, 4, 4)
+sns.kdeplot(iris_training['petal_width'], label='Training', color='blue')
+sns.kdeplot(iris_test['petal_width'], label='Testing', color='orange', linestyle='--')
+plt.title('Petal Width')
+
+plt.suptitle('Random Sampling - Density Plots')
+plt.tight_layout()
+plt.show()
+
+```
+
+Notice some differences between the lines due to sample size (better to have more data).
+
+# The Actual KNN Model
+```{python}
+knn_model = KNeighborsClassifier(n_neighbors=3)
+```
+
+The k parameter is one that you set yourself. It is often an odd number to avoid ties in the voting scores
+
+```{python}
+knn_model.fit(iris_training, iris_train_labels)
+
+# Predictions
+iris_pred = knn_model.predict(iris_test)
+print(iris_pred)
+```
+
+You store into iris_pred the function that takes as arguments the training set, the test set, the train labels and the amount of neighbours you want to find with this algorithm. The result of this function is a factor vector with the predicted classes for each row of the test data.
+
+# Model Evaluation
+```{python}
+conf_matrix = confusion_matrix(iris_test_labels, iris_pred)
+
+num_samples = len(iris_test_labels)
+num_correct = np.sum(np.diag(conf_matrix))
+
+print("Confusion Matrix:\n", conf_matrix)
+print(f"\nCorrect predictions: {num_correct} out of {num_samples} samples")
+
+```
+
+The results show that overall accuracy is 47 correct predictions out of 49 samples, which is quite good.
+
+## Calculate out-off-sample error
+```{python}
+
+accuracy = accuracy_score(iris_test_labels, iris_pred)
+num_samples = len(iris_test_labels)
+print(f"Accuracy: {accuracy:.2%} ({np.sum(iris_pred == iris_test_labels)} correct out of {num_samples} samples)")
+
+```
+
+The model achieved 95.9% accuracy with k is n.
+
