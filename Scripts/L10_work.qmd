@@ -1,0 +1,314 @@
+---
+title: "Lecture 10: Time Series and Forecasting with Python"
+subtitle: "Aplications"
+author:
+  - name: Iegor Vyshnevskyi
+    email: ievysh@wsu.ac.kr
+    affiliations: 
+        - id: ECIS
+          name: Woosong University
+          department: Global Convergence Management
+          address: 171 Dongdaejeon-ro
+          city: Daejeon
+          state: Republic of Korea
+          postal-code: 34606
+
+date: last-modified
+format: html
+
+---
+
+# Loading needed modules / libraries and data
+
+```{python echo=FALSE}
+#install needed modules if you do not have them
+
+# install from Terminal in VSCode all needed modules in the similar way as below
+# macOS
+#python3 -m pip install numpy
+
+# Windows (may require elevation)
+#py -m pip install numpy
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+#pip install pytimetk
+import pytimetk as tk            # To work on time series data
+
+from datetime import datetime    # To access datetime 
+from pandas import Series        # To work on series 
+%matplotlib inline 
+import warnings                   # To ignore the warnings
+warnings.filterwarnings("ignore")
+#pip install statsmodels
+import statsmodels.api as sm
+
+```
+
+# Data
+
+## Dataset intro
+
+We have a dataset with an ID, a date and time, and the number of passengers.
+
+- ID is the unique number given to each observation point.
+- Datetime is the time of each observation.
+- The count is the passenger count corresponding to each Datetime.
+
+## Loading data
+```{python}
+
+# Load the dataset
+train = pd.read_csv("Train.csv")
+
+# Display the top rows of the dataset
+print(train.head())
+
+# Display the bottom rows of the dataset
+print(train.tail())
+
+```
+
+
+## Data procesing
+
+### Aggregating the dataset at daily level
+
+```{python}
+# Convert the Datetime column to datetime type
+# The format specifies the format in which the datetime is present in the dataset
+train.Datetime = pd.to_datetime(train.Datetime, format='%d-%m-%Y %H:%M')
+# Resample the data at daily level and take the mean of the number of passengers
+train = train.resample('D', on='Datetime').mean()
+
+```
+
+
+### Splitting the data into train and test
+
+```{python}
+# Split the data into train and test
+test = train.loc['2014-06-25':'2014-09-25'] # 3 months of data
+train = train.loc['2012-08-25':'2014-06-24'] # 2 years of data
+
+```
+
+
+### Visualizing the data
+
+```{python}
+# Plot the train and test data with different colors
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+# Forecasting
+
+## Naive approach
+
+```{python}
+# Create a copy of the test dataset
+naive = test.copy()
+
+# Add a column named prediction to the naive dataset and fill it with the last value of the train dataset
+naive['prediction'] = train['Count'][len(train)-1]
+
+# Plot the train, test and naive datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+naive.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='naive')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+## Simple average
+
+```{python}
+# Create a copy of the test dataset
+simple_avg = test.copy()
+
+# Add a column named prediction to the simple_avg dataset and fill it with the mean of the train dataset
+simple_avg['prediction'] = train['Count'].mean()
+
+# Plot the train, test and simple_avg datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+simple_avg.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='simple_avg')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+## Moving average
+
+```{python}
+# Create a copy of the test dataset
+moving_avg = test.copy()
+
+# Add a column named prediction to the moving_avg dataset and fill it with the mean of the last 10 values of the train dataset
+moving_avg['prediction'] = train['Count'].rolling(10).mean().iloc[-1]
+
+# Plot the train, test and moving_avg datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+moving_avg.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='moving_avg')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+
+## Simple exponential smoothing
+
+```{python}
+
+from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
+
+# Create a copy of the test dataset
+simple_exp = test.copy()
+
+# Create a SimpleExpSmoothing object
+fit2 = SimpleExpSmoothing(np.asarray(train['Count'])).fit(smoothing_level=0.6,optimized=False)
+
+# Add a column named prediction to the simple_exp dataset and fill it with the predictions
+simple_exp['prediction'] = fit2.forecast(len(test))
+
+# Plot the train, test and simple_exp datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+simple_exp.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='simple_exp')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+## Holt’s linear trend method
+
+```{python}
+
+# Decompose the train dataset
+import statsmodels.api as sm
+sm.tsa.seasonal_decompose(train.Count).plot()
+result = sm.tsa.stattools.adfuller(train.Count)
+plt.show()
+
+```
+
+```{python}
+
+# Create a copy of the test dataset
+holt = test.copy()
+
+# Create a Holt object
+fit1 = Holt(np.asarray(train['Count'])).fit(smoothing_level = 0.3,smoothing_slope = 0.1)
+
+# Add a column named prediction to the holt dataset and fill it with the predictions
+holt['prediction'] = fit1.forecast(len(test))
+
+# Plot the train, test and holt datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+holt.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='holt')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+## Holt-Winters’ method
+
+```{python}
+
+# Create a copy of the test dataset
+holt_winter = test.copy()
+
+# Create a Holt-Winters object
+fit1 = ExponentialSmoothing(np.asarray(train['Count']) ,seasonal_periods=7 ,trend='add', seasonal='add',).fit()
+
+# Add a column named prediction to the holt_winter dataset and fill it with the predictions
+holt_winter['prediction'] = fit1.forecast(len(test))
+
+# Plot the train, test and holt_winter datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+holt_winter.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='holt_winter')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+## ARIMA
+
+```{python}
+
+# Create a copy of the test dataset
+arima = test.copy()
+
+# Create an ARIMA object
+model = sm.tsa.ARIMA(train.Count, order=(2, 1, 2))
+
+# Fit the model
+results = model.fit()
+
+# Add a column named prediction to the arima dataset and fill it with the predictions
+arima['prediction'] = results.forecast(len(test))[0]
+
+# Plot the train, test and arima datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+arima.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='arima')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+
+## SARIMA
+
+```{python}
+
+# Create a copy of the test dataset
+sarima = test.copy()
+
+# Create an SARIMA object
+model = sm.tsa.statespace.SARIMAX(train.Count, order=(2, 1, 2),seasonal_order=(2,1,2,7))
+
+# Fit the model
+results = model.fit()
+
+# Add a column named prediction to the sarima dataset and fill it with the predictions
+sarima['prediction'] = results.forecast(len(test))
+
+# Plot the train, test and sarima datasets
+train.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='train')
+test.Count.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='test')
+sarima.prediction.plot(figsize=(15,8), title= 'Daily Ridership', fontsize=14, label='sarima')
+plt.legend(loc='best')
+plt.show()
+
+```
+
+
+# In-class Assignment
+
+The data set “Sales.csv” you’ll be working with contains information on dates (monthly data) and sales (sales in Millions of USD, Seasonally Adjusted). 
+```{python}
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+sales = pd.read_csv("Sales.csv")
+
+sales.head()
+
+```
+
